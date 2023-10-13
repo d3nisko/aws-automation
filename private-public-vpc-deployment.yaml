@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:                                                                                                                                                                                                                               
+  MyPubVPC:                                                                                                                                                                                                                              
+    Type: AWS::EC2::VPC                                                                                                                                                                                                                  
+    Properties:                       
+      CidrBlock: 10.10.0.0/16
+      Tags:
+        - Key: Name    
+          Value: public-vpc
+
+  MyPrvVPC:
+    Type: AWS::EC2::VPC
+    Properties:         
+      CidrBlock: 10.11.0.0/16                             
+      Tags:    
+        - Key: Name       
+          Value: private-vpc
+
+  MyPublicSubnet:              
+    Type: AWS::EC2::Subnet
+    Properties:    
+      VpcId: !Ref MyPubVPC  
+      CidrBlock: 10.10.254.0/24                           
+      Tags:       
+        - Key: Name                
+          Value: public                                   
+
+  MyPrivateSubnet:            
+    Type: AWS::EC2::Subnet
+    Properties:        
+      VpcId: !Ref MyPrvVPC
+      CidrBlock: 10.11.11.0/24
+      Tags:                    
+        - Key: Name                                       
+          Value: private    
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  PublicRouteTable:                                       
+    Type: AWS::EC2::RouteTable
+    Properties:          
+      VpcId: !Ref MyPubVPC              
+      Tags:    
+        - Key: Name                      
+          Value: public-rt           
+
+  PrivateRouteTable:                                      
+    Type: AWS::EC2::RouteTable      
+    Properties:                                
+      VpcId: !Ref MyPrvVPC
+      Tags:                      
+        - Key: Name                      
+          Value: private-rt                               
+
+  InternetGatewayAttachment:        
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:                  
+      VpcId: !Ref MyPubVPC          
+      InternetGatewayId: !Ref InternetGateway             
+
+  DefaultRoute:        
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:                         
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+  
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
